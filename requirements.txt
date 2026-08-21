@@ -1,0 +1,11 @@
+# Versions this code was run with. Newer releases will usually work, with the
+# two exceptions noted in the README under Known version constraints.
+torch==2.11.0
+numpy==2.4.6
+scipy==1.17.1
+scikit-learn==1.9.0
+mediapipe==1.0.0
+opencv-python-headless==5.0.0
+matplotlib==3.11.1
+sacrebleu==2.6.0
+tqdm

@@ -1,0 +1,25 @@
+# Data and derived artifacts, none of which belong in the repo
+data/
+poses/
+poses_isharah/
+runs/
+logs/
+*.npz
+*.pkl
+
+# Model and figure outputs
+*.pt
+*.ckpt
+*.pdf
+*.png
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+*.egg-info/
+.venv/
+env/
+
+# macOS
+.DS_Store
