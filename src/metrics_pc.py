@@ -74,6 +74,26 @@ def vocab_metrics(selected_glosses: Sequence[Sequence[str]],
     }
 
 
+def selected_type_frequency(selected_glosses: Sequence[Sequence[str]],
+                             min_count: int = 5) -> Dict[str, float]:
+    """How much repeated evidence the purchased subset gives each type it acquires.
+
+    `vocab_metrics` measures breadth against the pool; this measures depth within the
+    purchase itself. A selector can acquire many types while giving most of them only
+    one or two occurrences, which is exactly the failure mode a coverage objective is
+    blind to: it rewards a type's presence, not its support.
+    """
+    counts = Counter(t for g in selected_glosses for t in g)
+    n_types = len(counts)
+    n_tokens = sum(counts.values())
+    n_ge_min = sum(1 for c in counts.values() if c >= min_count)
+    return {
+        "tokens_per_type": n_tokens / n_types if n_types else 0.0,
+        "n_types_ge_min": n_ge_min,
+        "frac_types_ge_min": n_ge_min / n_types if n_types else 0.0,
+    }
+
+
 # ---------------------------------------------------------------------------
 # 6.4 rare-gloss recall
 # ---------------------------------------------------------------------------

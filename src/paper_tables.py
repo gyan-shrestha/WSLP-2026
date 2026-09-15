@@ -27,7 +27,7 @@ from pathlib import Path
 import numpy as np
 
 from acquire import clip_cost
-from metrics_pc import aulc, redundancy, source_entropy, vocab_metrics
+from metrics_pc import aulc, redundancy, selected_type_frequency, source_entropy, vocab_metrics
 
 # display name -> internal strategy key, in the order the paper lists them
 ROWS = [
@@ -127,6 +127,7 @@ def selection_properties(strategies, budgets, corpus, root, poses, isharah_split
 
             sel_gloss = [train[i].gloss for i in idx]
             vm = vocab_metrics(sel_gloss, pool_gloss, pool_gloss)
+            freq = selected_type_frequency(sel_gloss, min_count=5)
             out[(strat, b)] = {
                 "n_clips": len(idx),
                 "gloss_types": vm["n_selected_types"],
@@ -136,11 +137,16 @@ def selection_properties(strategies, budgets, corpus, root, poses, isharah_split
                 "source_entropy": source_entropy([train[i].signer for i in idx]),
                 "pose_quality": float(qual[idx].mean()),
                 "redundancy": redundancy(emb, idx),
+                "tokens_per_type": freq["tokens_per_type"],
+                "types_ge5": freq["n_types_ge_min"],
+                "frac_types_ge5": freq["frac_types_ge_min"],
             }
             print(f"  {strat:24s} b={b:5.1f}  n={len(idx):5d}  "
                   f"types={vm['n_selected_types']:4d}  "
                   f"H_src={out[(strat,b)]['source_entropy']:.3f}  "
-                  f"redund={out[(strat,b)]['redundancy']:.3f}", flush=True)
+                  f"redund={out[(strat,b)]['redundancy']:.3f}  "
+                  f"tok/type={freq['tokens_per_type']:.2f}  "
+                  f"types>=5={freq['n_types_ge_min']:4d}", flush=True)
     return out
 
 
@@ -180,10 +186,11 @@ def table1(runs, budgets, props, mid):
 
 
 def table2(props, mid):
-    L = ["\\begin{table*}[t]\\centering\\small", "\\begin{tabular}{lrrrrrrr}", "\\toprule",
+    L = ["\\begin{table*}[t]\\centering\\small", "\\begin{tabular}{lrrrrrrrrr}", "\\toprule",
          "Method at 10\\% & Clips & Gloss types $\\uparrow$ & Gloss cov. $\\uparrow$ & "
          "Rare cov. $\\uparrow$ & Source entropy $\\uparrow$ & Pose quality $\\uparrow$ & "
-         "Redundancy $\\downarrow$ \\\\", "\\midrule"]
+         "Redundancy $\\downarrow$ & Tokens/type $\\uparrow$ & Types $\\geq$5 $\\uparrow$ \\\\",
+         "\\midrule"]
     for name, key, _ in ROWS:
         p = props.get((key, mid))
         if not p:
@@ -193,11 +200,15 @@ def table2(props, mid):
         L.append(f"{name} & {p['n_clips']} & {p['gloss_types']} & "
                  f"{p['gloss_coverage']:.3f} & {p['rare_coverage']:.3f} & "
                  f"{p['source_entropy']:.3f} & {p['pose_quality']:.3f} & "
-                 f"{p['redundancy']:.3f} \\\\")
+                 f"{p['redundancy']:.3f} & {p['tokens_per_type']:.2f} & "
+                 f"{p['types_ge5']} \\\\")
     L += ["\\bottomrule", "\\end{tabular}",
           "\\caption{Post-selection analysis of the purchased set at the 10 percent budget. "
           "Gloss and rare-type coverage are computed after selection and were not available "
-          "to any label-free selector.}", "\\label{tab:selection}\\end{table*}"]
+          "to any label-free selector. Tokens/type and Types $\\geq$5 describe repetition "
+          "within the purchase itself: how much support each acquired gloss type gets, "
+          "rather than how many distinct types were acquired.}",
+          "\\label{tab:selection}\\end{table*}"]
     return "\n".join(L)
 
 
